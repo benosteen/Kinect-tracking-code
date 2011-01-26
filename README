@@ -1,0 +1,8 @@
+Demo code to read, visualise and re-broadcast OSC data emitted by the OSCeleton code, which reads from the Primesense 'skeleton mapping' library, based on Kinect data
+
+read_data.py -- reads data from the default OSC port that osceleton emits. Tracks the hands and the shoulder points of the users, maintaining the last-known joint locations.
+
+osc_hand_viz.py -- run this, with pyliblo, pygame and PyOpenGL installed :) will pull data from osceleton, and visualise it. Alter the 'endpoints' at the top of the script to alter the points it rebroadcasts the information to.
+
+eat_kinect.py -- mainly for debug - see the data emitted by osc_hand_viz.py
+
