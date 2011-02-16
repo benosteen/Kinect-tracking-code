@@ -15,6 +15,21 @@ server = OSCServer(7110)
 rquad = 0.0
 rq_diff = 0.15
 
+class CommandState(object):
+    def __init__(self):
+        self.state = {}
+
+    def update(self, i, command, state):
+        if not self.state.has_key(i):
+            self.state[i] = {}
+        if not self.state[i].has_key(command):
+            self.state[i][command] = False
+        if self.state[i][command] != state:
+            self.state[i][command] = state
+            return True
+        else:
+            return False
+
 def resize((width, height)):
     if height==0:
         height=1
@@ -43,7 +58,7 @@ def emphasis_point(x,y,z, size=0.02, colour=(0.5,0.5,1.0)):
     glEnd()
 
 
-def draw(server):
+def draw(server, c):
     global rquad, rq_diff
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()	
@@ -108,8 +123,12 @@ def draw(server):
         glVertex3f(*server.rh[player])
         glVertex3f(*server.rs[player])
         glEnd()
-        emphasis_point(*server.rh[player], colour=(1.0,0.3,0.4))
-        emphasis_point(*server.lh[player])
+        if c.state.has_key(player) and True in c.state[player].values():
+            emphasis_point(*server.rh[player], colour=(1.0,0.0,0.0), size=0.05)
+            emphasis_point(*server.lh[player], colour=(0.0,0.0,1.0), size=0.05)
+        else:
+            emphasis_point(*server.rh[player], colour=(1.0,0.3,0.4))
+            emphasis_point(*server.lh[player])
         # And now, shoulder joints
         emphasis_point(*server.ls[player], colour=(0.3, 0.3, 0.7))
         emphasis_point(*server.rs[player], colour=(0.7, 0.2, 0.2))
@@ -130,6 +149,12 @@ def main():
     resize((640,480))
     init()
 
+    c = CommandState()
+    ythreshold = 0.2
+    zthreshold = 0.4
+
+    arms_out_threshold = 0.3
+
     frames = 0
     ticks = pygame.time.get_ticks()
     while 1:
@@ -137,16 +162,54 @@ def main():
         if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
             break
         
-        draw(server)
+        draw(server, c)
         pygame.display.flip()
         server.recv(100)
         for player in (x for x in server.lh.keys() if server.lh[x][0] > -10.0):
             # Only send real data
+            rh = server.rh[player]
+            lh = server.lh[player]
+            ls = server.ls[player]
+            rs = server.rs[player]
+            dx = (rs[0]+ls[0]) - (rh[0]+lh[0])
+            dy = (rs[1]+ls[1]) - (rh[1]+lh[1])
+            dz = (rs[2]+ls[2]) - (rh[2]+lh[2]) - 0.1 # fudge
+            dh = abs(rh[0]-lh[0]) + abs(rh[1]-lh[1]) + abs(rh[2]-lh[2])
+            commands = []
+
+            if abs(dy) > ythreshold and dh > arms_out_threshold:
+                if dy<0:
+                    if c.update(player, 'u', True):
+                        commands.append('u')
+                else:
+                    if c.update(player, 'd', True):
+                        commands.append('d')
+            else:
+                if c.update(player, 'u', False):
+                    commands.append('nu')
+                if c.update(player, 'd', False):
+                    commands.append('nd')
+            
+            if abs(dz) > zthreshold and dh > arms_out_threshold:
+                if dz<0:
+                    if c.update(player, 'b', True):
+                        commands.append('b')
+                else:
+                    if c.update(player, 'f', True):
+                        commands.append('f')
+            else:
+                c.update(player, 'f', False)
+                c.update(player, 'b', False)
+
+            if commands:
+                print "Commands to be sent: %s" % commands
             for target in targets:
                 liblo.send(target, "/hands", player, *(server.rh[player] + server.lh[player]))
                 liblo.send(target, "/shoulders", player, *(server.rs[player] + server.ls[player]))
                 liblo.send(target, "/combined", player, *(server.rh[player] + server.lh[player]+server.rs[player] + server.ls[player]))
-        
+                for command in commands:
+                    liblo.send(target, "/command", command)
+
         frames = frames+1
 
     print "fps:  %d" % ((frames*1000)/(pygame.time.get_ticks()-ticks))
