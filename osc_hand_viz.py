@@ -152,15 +152,26 @@ def main():
     c = CommandState()
     ythreshold = 0.2
     zthreshold = 0.4
+    rotate_threshold = 0.5
+    side_threshold = 0.5
 
     arms_out_threshold = 0.3
 
     frames = 0
     ticks = pygame.time.get_ticks()
     while 1:
+        commands = []
         event = pygame.event.poll()
         if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
             break
+        if event.type == KEYDOWN and event.key == K_t:
+            commands.append('takeoff')
+        if event.type == KEYDOWN and event.key == K_l:
+            commands.append('landing')
+        for target in targets:
+            for command in commands: 
+                print commands
+                liblo.send(target, "/command", command)
         
         draw(server, c)
         pygame.display.flip()
@@ -175,7 +186,8 @@ def main():
             dy = (rs[1]+ls[1]) - (rh[1]+lh[1])
             dz = (rs[2]+ls[2]) - (rh[2]+lh[2]) - 0.1 # fudge
             dh = abs(rh[0]-lh[0]) + abs(rh[1]-lh[1]) + abs(rh[2]-lh[2])
-            commands = []
+            dr = rh[2]-lh[2]
+            dside = rh[1]-lh[1]
 
             if abs(dy) > ythreshold and dh > arms_out_threshold:
                 if dy<0:
@@ -190,6 +202,34 @@ def main():
                 if c.update(player, 'd', False):
                     commands.append('nd')
             
+           
+            if abs(dr) > rotate_threshold and dh > arms_out_threshold:
+                if dz<0:
+                    if c.update(player, 'rl', True):
+                        commands.append('rl')
+                else:
+                    if c.update(player, 'rr', True):
+                        commands.append('rr')
+            else:
+                if c.update(player, 'rl', False):
+                    commands.append('nrl')
+                if c.update(player, 'rr', False):
+                    commands.append('nrr')
+
+            if abs(dside) > side_threshold and dh > arms_out_threshold:
+                if dside<0:
+                    if c.update(player, 'yl', True):
+                        commands.append('yl')
+                else:
+                    if c.update(player, 'yr', True):
+                        commands.append('yr')
+            else:
+                if c.update(player, 'yl', False):
+                    commands.append('nyl')
+                if c.update(player, 'yr', False):
+                    commands.append('nyr')
+            
+            
             if abs(dz) > zthreshold and dh > arms_out_threshold:
                 if dz<0:
                     if c.update(player, 'b', True):
@@ -198,8 +238,11 @@ def main():
                     if c.update(player, 'f', True):
                         commands.append('f')
             else:
-                c.update(player, 'f', False)
-                c.update(player, 'b', False)
+                if c.update(player, 'f', False):
+                    commands.append('nf')
+                if c.update(player, 'b', False):
+                    commands.append('nb')
+            
 
             if commands:
                 print "Commands to be sent: %s" % commands
@@ -207,8 +250,10 @@ def main():
                 liblo.send(target, "/hands", player, *(server.rh[player] + server.lh[player]))
                 liblo.send(target, "/shoulders", player, *(server.rs[player] + server.ls[player]))
                 liblo.send(target, "/combined", player, *(server.rh[player] + server.lh[player]+server.rs[player] + server.ls[player]))
-                for command in commands:
+                for command in commands: 
+                    print commands
                     liblo.send(target, "/command", command)
+                commands = []
 
         frames = frames+1
 

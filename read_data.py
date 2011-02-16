@@ -47,16 +47,16 @@ class OSCServer(liblo.Server):
         s, i, x, y, z = args
         if s.startswith("r_hand"):
             self.rh[i] = (x,1.0-y,z)
-            #print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
+#            print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
         if s.startswith("l_hand"):
             self.lh[i] = (x,1.0-y,z)
-            #print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
+#            print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
         if s.startswith("r_shoulder"):
             self.rs[i] = (x,1.0-y,z)
-            #print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
+#            print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
         if s.startswith("l_shoulder"):
             self.ls[i] = (x,1.0-y,z)
-            #print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
+#            print "User:%s - Joint '%s' (%s,%s,%s)" % (i, s, x, y, z)
     
     def fallback(self, path, args, types, src):
         pass
