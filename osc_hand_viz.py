@@ -204,7 +204,7 @@ def main():
             
            
             if abs(dr) > rotate_threshold and dh > arms_out_threshold:
-                if dz<0:
+                if dr<0:
                     if c.update(player, 'rl', True):
                         commands.append('rl')
                 else:
@@ -250,6 +250,7 @@ def main():
                 liblo.send(target, "/hands", player, *(server.rh[player] + server.lh[player]))
                 liblo.send(target, "/shoulders", player, *(server.rs[player] + server.ls[player]))
                 liblo.send(target, "/combined", player, *(server.rh[player] + server.lh[player]+server.rs[player] + server.ls[player]))
+                liblo.send(target, "/differentials", dy, dz, dh, dr, dside)
                 for command in commands: 
                     print commands
                     liblo.send(target, "/command", command)

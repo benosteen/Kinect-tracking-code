@@ -5,18 +5,18 @@ import liblo, sys, getpass, telnetlib
 # create server, listening on port 1234
 class CommandData(liblo.Server):
     def __init__(self, port, debug = False):
-	
-	HOST = "localhost"
-	PORT = 54000
+    
+    HOST = "localhost"
+    PORT = 54000
 
-	self.tn = telnetlib.Telnet(HOST,PORT)
-	print self.tn.read_very_eager()
-	self.tn.write("drone.altitude();\n")
-	ALT = self.tn.read_very_eager()
-	print ALT
-	self.tn.write("drone.trim();\n")
+    self.tn = telnetlib.Telnet(HOST,PORT)
+    print self.tn.read_very_eager()
+    self.tn.write("drone.altitude();\n")
+    ALT = self.tn.read_very_eager()
+    print ALT
+    self.tn.write("drone.trim();\n")
 
-	try:
+    try:
             super(CommandData, self).__init__(port)
             self.add_method("/command", 's', self.command_callback)
             
@@ -29,21 +29,21 @@ class CommandData(liblo.Server):
             sys.exit()
 
     def command_callback(self, path, args):
-	self.tn.write("drone.altitude();\n")
-	ALT = self.tn.read_very_eager()
-	print ALT
+    self.tn.write("drone.altitude();\n")
+    ALT = self.tn.read_very_eager()
+    print ALT
         [s] = args
         print s
         if self.debug:
             print "Recieved command: '%s'" % s
-	if s == 'takeoff':
+    if s == 'takeoff':
             self.tn.write("drone.takeoff();\n")
-	    print "Takeoff\n"
-	    pass
-	if s == 'landing':
+        print "Takeoff\n"
+        pass
+    if s == 'landing':
             self.tn.write("drone.landing();\n")
-	    print "Landing\n"
-	    pass
+        print "Landing\n"
+        pass
         if s == 'u':
             self.tn.write("drone.speedZ = 0.4;\n")
         elif s == 'd':
